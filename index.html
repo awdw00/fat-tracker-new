@@ -154,11 +154,64 @@
   <script>
     const form = document.getElementById('progressForm');
 
-    const userData = {
+    // Load from localStorage or initialize
+    const userData = JSON.parse(localStorage.getItem('userData')) || {
       JJ: [],
       Ivy: [],
       Angus: []
     };
+
+    function saveData() {
+      localStorage.setItem('userData', JSON.stringify(userData));
+    }
+
+    function renderUserTable(user) {
+      const table = document.querySelector(`#table-${user}`);
+      const tbody = table.querySelector('tbody');
+      tbody.innerHTML = ''; // clear table
+
+      const entries = userData[user];
+
+      if (entries.length === 0) return;
+
+      entries.forEach((entry, i) => {
+        let changeLast = '–';
+        let changeFirst = '–';
+
+        if (i > 0) {
+          const last = entries[i - 1];
+          changeLast = `
+            體重: ${(100 * (entry.weight - last.weight) / last.weight).toFixed(1)}%<br>
+            體脂: ${(100 * (entry.bodyFat - last.bodyFat) / last.bodyFat).toFixed(1)}%<br>
+            肌肉: ${(100 * (entry.muscleMass - last.muscleMass) / last.muscleMass).toFixed(1)}%
+          `;
+        }
+        if (i >= 0) {
+          const first = entries[0];
+          changeFirst = `
+            體重: ${(100 * (entry.weight - first.weight) / first.weight).toFixed(1)}%<br>
+            體脂: ${(100 * (entry.bodyFat - first.bodyFat) / first.bodyFat).toFixed(1)}%<br>
+            肌肉: ${(100 * (entry.muscleMass - first.muscleMass) / first.muscleMass).toFixed(1)}%
+          `;
+        }
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${entry.date}</td>
+          <td>${entry.weight}</td>
+          <td>${entry.bodyFat}</td>
+          <td>${entry.muscleMass}</td>
+          <td>${changeLast}</td>
+          <td>${changeFirst}</td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      table.style.display = 'table';
+    }
+
+    // Render all users on page load
+    ['JJ', 'Ivy', 'Angus'].forEach(renderUserTable);
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -169,48 +222,10 @@
       const bodyFat = parseFloat(document.getElementById('bodyFat').value);
       const muscleMass = parseFloat(document.getElementById('muscleMass').value);
 
-      const userArray = userData[user];
-
-      // Calculate % changes
-      let changeLast = '–';
-      let changeFirst = '–';
-
-      if (userArray.length > 0) {
-        const last = userArray[userArray.length - 1];
-        changeLast = `
-          體重: ${(100 * (weight - last.weight) / last.weight).toFixed(1)}%<br>
-          體脂: ${(100 * (bodyFat - last.bodyFat) / last.bodyFat).toFixed(1)}%<br>
-          肌肉: ${(100 * (muscleMass - last.muscleMass) / last.muscleMass).toFixed(1)}%
-        `;
-      }
-
-      if (userArray.length > 0) {
-        const first = userArray[0];
-        changeFirst = `
-          體重: ${(100 * (weight - first.weight) / first.weight).toFixed(1)}%<br>
-          體脂: ${(100 * (bodyFat - first.bodyFat) / first.bodyFat).toFixed(1)}%<br>
-          肌肉: ${(100 * (muscleMass - first.muscleMass) / first.muscleMass).toFixed(1)}%
-        `;
-      }
-
-      // Store entry
-      userArray.push({ date, weight, bodyFat, muscleMass });
-
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td>${date}</td>
-        <td>${weight}</td>
-        <td>${bodyFat}</td>
-        <td>${muscleMass}</td>
-        <td>${changeLast}</td>
-        <td>${changeFirst}</td>
-      `;
-
-      const table = document.querySelector(`#table-${user}`);
-      const tableBody = table.querySelector('tbody');
-      table.style.display = 'table';
-      tableBody.appendChild(row);
-
+      // Store
+      userData[user].push({ date, weight, bodyFat, muscleMass });
+      saveData();
+      renderUserTable(user);
       form.reset();
     });
   </script>
